@@ -1,0 +1,39 @@
+version: '3.7'
+
+services:
+
+  #  The Application
+  app:
+    container_name: ams
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports: 
+      - 8085:80
+    environment:
+      - "DB_HOST=database"
+      - "REDIS_HOST=cache"
+      - "DB_DATABASE=ams"
+      - "DB_USERNAME=kalyma"
+      - "DB_PASSWORD=kalyma"
+  
+  # The Database
+  database:
+    container_name: mysql_database
+    image: mysql:5.7
+    volumes:
+      - dbdata:/var/lib/mysql
+    environment:
+      - "MYSQL_DATABASE=ams"
+      - "MYSQL_USER=kalyma"
+      - "MYSQL_PASSWORD=kalyma"
+      - "MYSQL_ROOT_PASSWORD=kalyma"
+    ports:
+      - 8991:3306
+
+  # redis
+  cache:
+    image: redis:3.0-alpine
+
+volumes:
+    dbdata:

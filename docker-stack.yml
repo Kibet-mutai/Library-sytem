@@ -1,0 +1,55 @@
+version: '3.3'
+services:
+
+  # The Database
+  database:
+    container_name: mysql
+    image: mysql:5.7
+    networks:
+      - app
+    volumes:
+      - dbdata:/var/lib/mysql
+    environment:
+      - "MYSQL_DATABASE=ams"
+      - "MYSQL_USER=kalyma"
+      - "MYSQL_PASSWORD=kalyma"
+      - "MYSQL_ROOT_PASSWORD=kalyma"
+
+  #PHP Service
+  app:
+    image: registry.gitlab.com/kalyma/kalyma-ams:master
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+      DB_HOST: ${DB_DATABASE:-database}
+      DB_DATABASE: ${DB_DATABASE:-ams}
+      DB_USERNAME: ${DB_USERNAME:-kalyma}
+      DB_PASSWORD: ${DB_PASSWORD:-kalyma}
+    networks:
+      - app
+    depends_on:
+      - database
+    deploy:
+      labels:
+      - traefik.frontend.rule=Host:${DOMAIN:-ymca.localtest.me}
+      - traefik.backend=webserver
+      - traefik.port=80
+      - traefik.enable=true
+      - traefik.tags=${TRAEFIK_PUBLIC_TAG:-traefik-public}
+      - traefik.docker.network=traefik-public
+      # Traefik service that listens to HTTP
+      - traefik.redirectorservice.frontend.entryPoints=http
+      - traefik.redirectorservice.frontend.redirect.entryPoint=https
+      # Traefik service that listens to HTTPS
+      - traefik.webservice.frontend.entryPoints=https
+
+#Docker Networks
+networks:
+  app:
+  traefik-public:
+    external: true
+    
+#Volumes
+volumes:
+  dbdata:
+    driver: local
